@@ -108,7 +108,7 @@ function updateAnimatedSlider(now) {
 }
 
 // --- Auto-play ---
-let autoplayActive = false;
+let autoplayActive = true; // starts playing on load
 const AUTOPLAY_SPEED = 0.08; // slider units per second
 
 function toggleAutoplay() {
