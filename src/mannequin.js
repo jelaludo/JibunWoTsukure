@@ -63,9 +63,10 @@ export const CONNECTION_PAIRS = [
   // Shoulder-hip bilateral
   { from: 'shoulderL', to: 'hipL', label: 'L column' },
   { from: 'shoulderR', to: 'hipR', label: 'R column' },
-  // Core to ground
-  { from: 'core', to: 'ankleMid', label: 'core→ground' },
 ];
+
+// Spine path for Panel 2 activation: head→neck→spine→core
+export const SPINE_PATH = ['head', 'neck', 'spine', 'core'];
 
 // The Arch: foot→knee→hip→hip→knee→foot — a foundational lower-body connection
 export const ARCH_PATH = ['ankleL', 'kneeL', 'hipL', 'hipR', 'kneeR', 'ankleR'];

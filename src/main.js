@@ -7,6 +7,7 @@ import { renderTensionHeatmap } from './panels/tensionHeatmap.js';
 import { renderConnectionLines } from './panels/connectionLines.js';
 import { renderForceFlow } from './panels/forceFlow.js';
 import { renderStacking } from './panels/stackingAlignment.js';
+import { lerp, clamp, easeInOut } from './utils/math.js';
 
 // --- Scenario registry ---
 const scenarios = {
@@ -22,6 +23,7 @@ const sliderLabel = document.getElementById('slider-label');
 const stepsContainer = document.getElementById('steps');
 const scenarioSelect = document.getElementById('scenario-select');
 const autoplayBtn = document.getElementById('autoplay-btn');
+const playIcon = autoplayBtn.querySelector('.play-icon');
 const tooltip = document.getElementById('tooltip');
 const canvases = [
   document.getElementById('canvas-tension'),
@@ -39,25 +41,35 @@ const srPanels = {
   stacking: document.getElementById('sr-stacking'),
 };
 
+// Panel renderers: [render fn, needs time param]
+const panels = [
+  { render: renderTensionHeatmap, usesTime: false },
+  { render: renderConnectionLines, usesTime: true },
+  { render: renderForceFlow, usesTime: true },
+  { render: renderStacking, usesTime: false },
+];
+
 // --- Sizing ---
 function resize() {
-  for (const canvas of canvases) {
+  canvases.forEach((canvas, i) => {
     const rect = canvas.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     canvas.style.width = rect.width + 'px';
     canvas.style.height = rect.height + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctxs[i].setTransform(dpr, 0, 0, dpr, 0, 0);
     canvas.logicalWidth = rect.width;
     canvas.logicalHeight = rect.height;
-  }
+  });
 }
 
 // --- Step buttons ---
+let stepBtns = [];
+
 function buildSteps() {
   stepsContainer.innerHTML = '';
+  stepBtns = [];
   for (const kf of scenario.keyframes) {
     const btn = document.createElement('button');
     btn.className = 'step-btn';
@@ -65,10 +77,11 @@ function buildSteps() {
     btn.title = kf.description;
     btn.setAttribute('aria-label', `${kf.label}: ${kf.description}`);
     btn.addEventListener('click', () => {
-      stopAutoplay();
+      setAutoplayState(false);
       animateSliderTo(kf.t);
     });
     stepsContainer.appendChild(btn);
+    stepBtns.push(btn);
   }
 }
 
@@ -78,7 +91,7 @@ scenarioSelect.addEventListener('change', () => {
   if (scenarios[key]) {
     scenario = scenarios[key];
     slider.value = 0;
-    stopAutoplay();
+    setAutoplayState(false);
     buildSteps();
   }
 });
@@ -99,9 +112,7 @@ function updateAnimatedSlider(now) {
   if (animTarget === null) return;
   const elapsed = now - animStart;
   const progress = Math.min(elapsed / ANIM_DURATION, 1);
-  const eased = progress * progress * (3 - 2 * progress);
-  const value = animFrom + (animTarget - animFrom) * eased;
-  slider.value = value;
+  slider.value = lerp(animFrom, animTarget, easeInOut(progress));
   if (progress >= 1) {
     animTarget = null;
   }
@@ -109,49 +120,68 @@ function updateAnimatedSlider(now) {
 
 // --- Auto-play ---
 let autoplayActive = true; // starts playing on load
+let userPaused = false; // true when user explicitly pauses — disables looping
 const AUTOPLAY_SPEED = 0.08; // slider units per second
+const LOOP_PAUSE_MS = 3000; // pause at end before restarting
+let lastAutoplayTime = performance.now();
+let loopPauseUntil = 0; // timestamp when loop pause ends
+let autoplayValue = 0; // tracked as float to avoid slider step-snapping
 
-function toggleAutoplay() {
-  autoplayActive = !autoplayActive;
-  autoplayBtn.classList.toggle('playing', autoplayActive);
-  const icon = autoplayBtn.querySelector('.play-icon');
-  icon.textContent = autoplayActive ? '⏸' : '▶';
-  autoplayBtn.setAttribute('aria-label', autoplayActive ? 'Pause auto-advance' : 'Play auto-advance');
-}
-
-function stopAutoplay() {
-  if (autoplayActive) {
-    autoplayActive = false;
-    autoplayBtn.classList.remove('playing');
-    autoplayBtn.querySelector('.play-icon').textContent = '▶';
-    autoplayBtn.setAttribute('aria-label', 'Play auto-advance');
+function setAutoplayState(playing) {
+  if (autoplayActive === playing) return;
+  autoplayActive = playing;
+  autoplayBtn.classList.toggle('playing', playing);
+  playIcon.textContent = playing ? '⏸' : '▶';
+  autoplayBtn.setAttribute('aria-label', playing ? 'Pause auto-advance' : 'Play auto-advance');
+  if (playing) {
+    lastAutoplayTime = performance.now();
+    autoplayValue = parseFloat(slider.value);
   }
 }
 
-autoplayBtn.addEventListener('click', toggleAutoplay);
+autoplayBtn.addEventListener('click', () => {
+  userPaused = autoplayActive; // if currently playing, user is pausing
+  loopPauseUntil = 0;
+  if (!autoplayActive && parseFloat(slider.value) >= 1) slider.value = 0;
+  setAutoplayState(!autoplayActive);
+});
 
 // Stop autoplay when user manually drags slider
 slider.addEventListener('input', () => {
-  if (autoplayActive) stopAutoplay();
-  animTarget = null; // cancel any ongoing animation
+  userPaused = true;
+  loopPauseUntil = 0;
+  setAutoplayState(false);
+  animTarget = null;
 });
 
-let lastAutoplayTime = 0;
-
 function updateAutoplay(now) {
-  if (!autoplayActive) {
-    lastAutoplayTime = now;
+  // Handle loop pause at end
+  if (loopPauseUntil > 0) {
+    if (now >= loopPauseUntil) {
+      loopPauseUntil = 0;
+      autoplayValue = 0;
+      slider.value = 0;
+      lastAutoplayTime = now;
+      setAutoplayState(true);
+    }
     return;
   }
+
+  if (!autoplayActive) return;
   const dt = (now - lastAutoplayTime) / 1000;
   lastAutoplayTime = now;
 
-  let val = parseFloat(slider.value) + AUTOPLAY_SPEED * dt;
-  if (val >= 1) {
-    val = 1;
-    stopAutoplay();
+  autoplayValue += AUTOPLAY_SPEED * dt;
+  if (autoplayValue >= 1) {
+    autoplayValue = 1;
+    slider.value = 1;
+    setAutoplayState(false);
+    if (!userPaused) {
+      loopPauseUntil = now + LOOP_PAUSE_MS;
+    }
+    return;
   }
-  slider.value = val;
+  slider.value = autoplayValue;
 }
 
 // --- Tooltips ---
@@ -161,11 +191,11 @@ const PANEL_TOOLTIPS = [
     body: 'Heat shows parasitic (wasted) tension. Cool blue = efficient. Hot red = energy leak. As you self-organize, tension migrates from extremities into the core.',
   },
   {
-    title: 'Internal Connections 体の統一',
+    title: 'Internal Connections 體の統一',
     body: 'Cyan arcs show kinetic chains linking distant body parts through the core. The purple arch connects feet through hips. Stronger connections = unified structure.',
   },
   {
-    title: 'Force Flow 地面への道',
+    title: 'Ground Path / Force Flow 地面への道',
     body: 'Animated dashes show how an external push at the shoulder travels to the ground. Red pooling = force is stuck. Green flow = force reaches the earth.',
   },
   {
@@ -174,34 +204,40 @@ const PANEL_TOOLTIPS = [
   },
 ];
 
-function showTooltip(x, y, content) {
-  tooltip.innerHTML = `<strong>${content.title}</strong><br>${content.body}`;
-  tooltip.classList.add('visible');
-  tooltip.setAttribute('aria-hidden', 'false');
+let activeTooltipIndex = -1;
 
-  // Position: offset to avoid going off-screen
+function showTooltip(x, y, index) {
+  if (activeTooltipIndex !== index) {
+    activeTooltipIndex = index;
+    const content = PANEL_TOOLTIPS[index];
+    tooltip.textContent = '';
+    const strong = document.createElement('strong');
+    strong.textContent = content.title;
+    tooltip.appendChild(strong);
+    tooltip.appendChild(document.createElement('br'));
+    tooltip.appendChild(document.createTextNode(content.body));
+    tooltip.classList.add('visible');
+    tooltip.setAttribute('aria-hidden', 'false');
+  }
+
   const pad = 12;
-  const rect = tooltip.getBoundingClientRect();
   let left = x + pad;
   let top = y + pad;
   if (left + 240 > window.innerWidth) left = x - 240 - pad;
-  if (top + rect.height > window.innerHeight) top = y - rect.height - pad;
+  if (top + 160 > window.innerHeight) top = y - 160 - pad;
   tooltip.style.left = left + 'px';
   tooltip.style.top = top + 'px';
 }
 
 function hideTooltip() {
+  activeTooltipIndex = -1;
   tooltip.classList.remove('visible');
   tooltip.setAttribute('aria-hidden', 'true');
 }
 
 canvases.forEach((canvas, i) => {
-  canvas.addEventListener('pointerenter', (e) => {
-    showTooltip(e.clientX, e.clientY, PANEL_TOOLTIPS[i]);
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    showTooltip(e.clientX, e.clientY, PANEL_TOOLTIPS[i]);
-  });
+  canvas.addEventListener('pointerenter', (e) => showTooltip(e.clientX, e.clientY, i));
+  canvas.addEventListener('pointermove', (e) => showTooltip(e.clientX, e.clientY, i));
   canvas.addEventListener('pointerleave', hideTooltip);
 });
 
@@ -209,7 +245,6 @@ canvases.forEach((canvas, i) => {
 let lastSrLabel = '';
 
 function updateScreenReaderDescriptions(state) {
-  // Only update when label changes to avoid excessive announcements
   if (state.label === lastSrLabel) return;
   lastSrLabel = state.label;
 
@@ -238,19 +273,19 @@ document.addEventListener('keydown', (e) => {
 
   if (e.key === ' ' || e.key === 'Spacebar') {
     e.preventDefault();
-    toggleAutoplay();
+    setAutoplayState(!autoplayActive);
   } else if (e.key === 'ArrowRight') {
     e.preventDefault();
-    stopAutoplay();
-    slider.value = Math.min(1, parseFloat(slider.value) + 0.02);
+    setAutoplayState(false);
+    slider.value = clamp(parseFloat(slider.value) + 0.02);
   } else if (e.key === 'ArrowLeft') {
     e.preventDefault();
-    stopAutoplay();
-    slider.value = Math.max(0, parseFloat(slider.value) - 0.02);
-  } else if (e.key >= '1' && e.key <= '4') {
+    setAutoplayState(false);
+    slider.value = clamp(parseFloat(slider.value) - 0.02);
+  } else if (e.key >= '1' && e.key <= '9') {
     const idx = parseInt(e.key) - 1;
     if (idx < scenario.keyframes.length) {
-      stopAutoplay();
+      setAutoplayState(false);
       animateSliderTo(scenario.keyframes[idx].t);
     }
   }
@@ -258,6 +293,8 @@ document.addEventListener('keydown', (e) => {
 
 // --- Render loop ---
 let startTime = performance.now();
+let lastT = -1;
+let lastLabelText = '';
 
 function render(now) {
   const time = (now - startTime) / 1000;
@@ -266,45 +303,104 @@ function render(now) {
   updateAutoplay(now);
 
   const t = parseFloat(slider.value);
-  const state = computeState(scenario, t);
+  const tChanged = t !== lastT;
+  lastT = t;
 
-  // Update ARIA on slider
-  slider.setAttribute('aria-valuenow', t.toFixed(2));
+  const state = tChanged ? computeState(scenario, t) : render._lastState;
+  render._lastState = state;
 
-  // Update label
-  sliderLabel.textContent = `${state.label} — ${state.description}`;
+  // Update DOM only when t changes
+  if (tChanged) {
+    slider.setAttribute('aria-valuenow', t.toFixed(2));
 
-  // Update step button active state
-  const stepBtns = stepsContainer.querySelectorAll('.step-btn');
-  stepBtns.forEach((btn, i) => {
-    const kfT = scenario.keyframes[i].t;
-    const isActive = Math.abs(t - kfT) < 0.01;
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-pressed', isActive);
-  });
+    const labelText = `${state.label} — ${state.description}`;
+    if (labelText !== lastLabelText) {
+      lastLabelText = labelText;
+      sliderLabel.textContent = labelText;
+    }
 
-  // Update screen reader descriptions
-  updateScreenReaderDescriptions(state);
+    // Update step buttons: all passed stages stay lit, current gets 'current'
+    for (let i = 0; i < stepBtns.length; i++) {
+      const kfT = scenario.keyframes[i].t;
+      const passed = t >= kfT - 0.01;
+      const current = Math.abs(t - kfT) < 0.01;
+      stepBtns[i].classList.toggle('passed', passed && !current);
+      stepBtns[i].classList.toggle('active', current);
+      stepBtns[i].setAttribute('aria-pressed', passed || current);
+    }
 
-  // Render all panels
-  const w0 = canvases[0].logicalWidth;
-  const h0 = canvases[0].logicalHeight;
-  renderTensionHeatmap(ctxs[0], state, w0, h0);
+    updateScreenReaderDescriptions(state);
+  }
 
-  const w1 = canvases[1].logicalWidth;
-  const h1 = canvases[1].logicalHeight;
-  renderConnectionLines(ctxs[1], state, w1, h1, time);
-
-  const w2 = canvases[2].logicalWidth;
-  const h2 = canvases[2].logicalHeight;
-  renderForceFlow(ctxs[2], state, w2, h2, time);
-
-  const w3 = canvases[3].logicalWidth;
-  const h3 = canvases[3].logicalHeight;
-  renderStacking(ctxs[3], state, w3, h3);
+  // Render panels
+  for (let i = 0; i < panels.length; i++) {
+    const w = canvases[i].logicalWidth;
+    const h = canvases[i].logicalHeight;
+    if (panels[i].usesTime || tChanged) {
+      if (panels[i].usesTime) {
+        panels[i].render(ctxs[i], state, w, h, time);
+      } else {
+        panels[i].render(ctxs[i], state, w, h);
+      }
+    }
+  }
 
   requestAnimationFrame(render);
 }
+
+// --- About modal ---
+const ABOUT_MD_PATH = 'docs/JibunWoTsukure_Importance.md';
+const titleLink = document.getElementById('title-link');
+const aboutModal = document.getElementById('about-modal');
+const modalClose = document.getElementById('modal-close');
+const modalBody = document.getElementById('modal-body');
+let mdLoaded = false;
+
+async function loadAboutContent() {
+  if (mdLoaded) return;
+  try {
+    const res = await fetch(ABOUT_MD_PATH);
+    const text = await res.text();
+    modalBody.innerHTML = text
+      .split(/\n\n+/)
+      .filter(p => p.trim())
+      .map(p => `<p>${p.trim()}</p>`)
+      .join('');
+    mdLoaded = true;
+  } catch {
+    modalBody.innerHTML = '<p>Could not load content.</p>';
+  }
+}
+
+async function openModal() {
+  await loadAboutContent();
+  aboutModal.classList.add('visible');
+  aboutModal.setAttribute('aria-hidden', 'false');
+  modalClose.focus();
+}
+
+function closeModal() {
+  aboutModal.classList.remove('visible');
+  aboutModal.setAttribute('aria-hidden', 'true');
+  titleLink.focus();
+}
+
+titleLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  openModal();
+});
+
+modalClose.addEventListener('click', closeModal);
+
+aboutModal.addEventListener('click', (e) => {
+  if (e.target === aboutModal) closeModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && aboutModal.classList.contains('visible')) {
+    closeModal();
+  }
+});
 
 // --- Init ---
 window.addEventListener('resize', resize);

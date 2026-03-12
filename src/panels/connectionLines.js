@@ -2,13 +2,13 @@
 // Bezier arcs between distant body parts, routed through core.
 // Plus the Arch: foot→knee→hip→hip→knee→foot.
 
-import { CONNECTION_PAIRS, ARCH_PATH, scalePositions, drawMannequin } from '../mannequin.js';
+import { CONNECTION_PAIRS, ARCH_PATH, SPINE_PATH, scalePositions, drawMannequin } from '../mannequin.js';
 import { COLORS } from '../utils/colors.js';
 import { clearPanel, drawPanelTitle } from '../utils/drawing.js';
 
 export function renderConnectionLines(ctx, state, w, h, time) {
   clearPanel(ctx, w, h);
-  drawPanelTitle(ctx, 'Internal Connections', '体の統一', w);
+  drawPanelTitle(ctx, 'Internal Connections', '體の統一', w);
 
   const positions = scalePositions(state.positions, w, h);
 
@@ -26,6 +26,12 @@ export function renderConnectionLines(ctx, state, w, h, time) {
   const archStrength = state.connections['arch'] ?? 0;
   if (archStrength > 0.02) {
     drawArch(ctx, positions, archStrength, time);
+  }
+
+  // --- Draw the Spine (head→neck→spine→core) ---
+  const spineStrength = state.connections['spine'] ?? 0;
+  if (spineStrength > 0.02) {
+    drawSpine(ctx, positions, spineStrength, time);
   }
 
   // --- Draw pairwise connection arcs ---
@@ -79,6 +85,60 @@ export function renderConnectionLines(ctx, state, w, h, time) {
     ctx.arc(toPos.x, toPos.y, 3 + strength * 2, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.connectionGlow + dotAlpha;
     ctx.fill();
+  }
+}
+
+/**
+ * Draw the spine as an activated glowing line from head→neck→spine→core.
+ * Uses a warm gold color to distinguish from cyan connections and purple arch.
+ */
+function drawSpine(ctx, positions, strength, time) {
+  const pts = SPINE_PATH.map(name => positions[name]).filter(Boolean);
+  if (pts.length < 2) return;
+
+  const pulse = strength > 0.5
+    ? 1 + 0.1 * Math.sin(time * 2)
+    : 1;
+
+  const alpha = strength * 0.85 * pulse;
+  const width = 1.5 + strength * 3;
+  const color = '#fdcb6e'; // warm gold
+
+  // Outer glow
+  if (strength > 0.3) {
+    ctx.beginPath();
+    drawSmoothCurve(ctx, pts);
+    ctx.strokeStyle = color + Math.round(alpha * 0.25 * 255).toString(16).padStart(2, '0');
+    ctx.lineWidth = width + 6;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  // Main spine stroke
+  ctx.beginPath();
+  drawSmoothCurve(ctx, pts);
+  ctx.strokeStyle = color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+
+  // Node dots along the spine
+  const dotAlpha = Math.round(strength * 220).toString(16).padStart(2, '0');
+  for (const pt of pts) {
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, 3 + strength * 2, 0, Math.PI * 2);
+    ctx.fillStyle = color + dotAlpha;
+    ctx.fill();
+  }
+
+  // "spine" label when visible enough
+  if (strength > 0.4) {
+    const midPt = pts[Math.floor(pts.length / 2)];
+    ctx.font = '10px "IBM Plex Sans", sans-serif';
+    ctx.fillStyle = color + Math.round(alpha * 200).toString(16).padStart(2, '0');
+    ctx.textAlign = 'center';
+    ctx.fillText('spine', midPt.x + 24, midPt.y);
   }
 }
 

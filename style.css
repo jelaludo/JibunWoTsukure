@@ -50,6 +50,22 @@ header h1 {
   color: var(--accent);
 }
 
+header h1 a {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(116, 185, 255, 0.3);
+  transition: border-color 0.2s;
+}
+
+header h1 a:hover {
+  border-bottom-color: var(--accent);
+}
+
+header h1 a span {
+  color: var(--text-dim);
+}
+
 header h1 span {
   font-weight: 300;
   color: var(--text-dim);
@@ -76,7 +92,9 @@ header p {
 
 .controls-bottom {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 4px 0;
 }
 
@@ -118,20 +136,12 @@ header p {
   white-space: nowrap;
 }
 
-/* --- Scenario selector --- */
-
-.scenario-selector {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.scenario-selector label {
+.controls-bottom label {
   font-size: 0.75rem;
   color: var(--text-dim);
 }
 
-.scenario-selector select {
+.controls-bottom select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--panel-border);
@@ -144,8 +154,8 @@ header p {
   transition: border-color 0.2s;
 }
 
-.scenario-selector select:hover,
-.scenario-selector select:focus {
+.controls-bottom select:hover,
+.controls-bottom select:focus {
   border-color: var(--accent);
 }
 
@@ -252,10 +262,10 @@ input[type="range"]::-moz-range-thumb {
   background: transparent;
   border: 1px solid var(--panel-border);
   color: var(--text-dim);
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 4px;
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -270,10 +280,17 @@ input[type="range"]::-moz-range-thumb {
   outline-offset: 2px;
 }
 
+.step-btn.passed {
+  border-color: rgba(116, 185, 255, 0.4);
+  color: var(--accent);
+  background: rgba(116, 185, 255, 0.06);
+}
+
 .step-btn.active {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(116, 185, 255, 0.1);
+  background: rgba(116, 185, 255, 0.15);
+  box-shadow: 0 0 6px rgba(116, 185, 255, 0.3);
 }
 
 /* --- Tooltip --- */
@@ -325,4 +342,77 @@ input[type="range"]::-moz-range-thumb {
     flex-wrap: wrap;
     justify-content: center;
   }
+}
+
+/* --- About modal --- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+.modal-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  max-width: 640px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 28px 32px;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+.modal h2 {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.modal-body p {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+.modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+.modal-body em {
+  color: var(--accent);
+  font-style: italic;
 }

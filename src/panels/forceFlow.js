@@ -8,7 +8,7 @@ import { lerp } from '../utils/math.js';
 
 export function renderForceFlow(ctx, state, w, h, time) {
   clearPanel(ctx, w, h);
-  drawPanelTitle(ctx, 'Force Flow', '地面への道', w);
+  drawPanelTitle(ctx, 'Ground Path / Force Flow', '地面への道', w);
 
   const positions = scalePositions(state.positions, w, h);
 

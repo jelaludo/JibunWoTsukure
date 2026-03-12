@@ -9,7 +9,7 @@
 <body>
   <div class="app" role="application" aria-label="Body self-organization visualization">
     <header>
-      <h1>自分を作れ<span>Build Yourself</span></h1>
+      <h1><a href="#" id="title-link" aria-haspopup="dialog">自分を作れ<span>Build Yourself</span></a></h1>
       <p>Self-organization as the primary variable — four lenses, one body</p>
     </header>
 
@@ -38,7 +38,7 @@
         <canvas id="canvas-connections"></canvas>
         <div class="panel-sr" aria-live="polite" id="sr-connections"></div>
       </div>
-      <div class="panel" role="img" aria-label="Force Flow — how external force transmits through the body to the ground">
+      <div class="panel" role="img" aria-label="Ground Path / Force Flow — how external force transmits through the body to the ground">
         <canvas id="canvas-force"></canvas>
         <div class="panel-sr" aria-live="polite" id="sr-force"></div>
       </div>
@@ -48,17 +48,24 @@
       </div>
     </div>
 
-    <div class="controls-bottom" role="region" aria-label="Scenario selection">
-      <div class="scenario-selector" role="group" aria-label="Scenario selection">
-        <label for="scenario-select">Scenario:</label>
-        <select id="scenario-select" aria-label="Choose scenario">
-          <option value="standing">Standing 立位</option>
-          <option value="armInTriangle">Arm-in-Triangle 腕三角</option>
-        </select>
-      </div>
+    <div class="controls-bottom" role="group" aria-label="Scenario selection">
+      <label for="scenario-select">Scenario:</label>
+      <select id="scenario-select" aria-label="Choose scenario">
+        <option value="standing">Standing 立位</option>
+        <option value="armInTriangle">Arm-in-Triangle 腕三角</option>
+      </select>
     </div>
 
     <div class="tooltip" id="tooltip" role="tooltip" aria-hidden="true"></div>
+  </div>
+
+  <!-- About modal (outside .app to avoid grid interference) -->
+  <div class="modal-overlay" id="about-modal" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+    <div class="modal">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <h2 id="modal-title">自分を作れ — Build Yourself</h2>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
   </div>
 
   <script type="module" src="src/main.js"></script>
