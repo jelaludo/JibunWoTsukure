@@ -123,7 +123,7 @@ let autoplayActive = true; // starts playing on load
 let userPaused = false; // true when user explicitly pauses — disables looping
 const AUTOPLAY_SPEED = 0.08; // slider units per second
 const LOOP_PAUSE_MS = 3000; // pause at end before restarting
-let lastAutoplayTime = performance.now();
+let lastAutoplayTime = 0;
 let loopPauseUntil = 0; // timestamp when loop pause ends
 let autoplayValue = 0; // tracked as float to avoid slider step-snapping
 
@@ -168,7 +168,8 @@ function updateAutoplay(now) {
   }
 
   if (!autoplayActive) return;
-  const dt = (now - lastAutoplayTime) / 1000;
+  if (lastAutoplayTime === 0) lastAutoplayTime = now; // seed on first frame
+  const dt = Math.min((now - lastAutoplayTime) / 1000, 0.1); // cap to avoid jump
   lastAutoplayTime = now;
 
   autoplayValue += AUTOPLAY_SPEED * dt;
