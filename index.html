@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自分を作れ — Build Yourself</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>自分を作れ<span>Build Yourself</span></h1>
+      <p>Self-organization as the primary variable — four lenses, one body</p>
+    </header>
+
+    <div class="panels">
+      <div class="panel">
+        <canvas id="canvas-tension"></canvas>
+      </div>
+      <div class="panel">
+        <canvas id="canvas-connections"></canvas>
+      </div>
+      <div class="panel">
+        <canvas id="canvas-force"></canvas>
+      </div>
+      <div class="panel">
+        <canvas id="canvas-stacking"></canvas>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="steps" id="steps"></div>
+      <div class="slider-row">
+        <label>Unbuilt</label>
+        <input type="range" id="slider" min="0" max="1" step="0.005" value="0">
+        <label>Built</label>
+      </div>
+      <div class="slider-label" id="slider-label"></div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
