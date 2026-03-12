@@ -72,7 +72,7 @@ export const ARCH_PATH = ['ankleL', 'kneeL', 'hipL', 'hipR', 'kneeR', 'ankleR'];
 
 // Force path: ordered node chain for Panel 3 (shoulder push scenario)
 export const FORCE_PATH = [
-  'shoulderR', 'neck', 'spine', 'core', 'hipMid', 'kneeR', 'ankleR'
+  'shoulderR', 'neck', 'spine', 'core', 'hipR', 'kneeR', 'ankleR'
 ];
 
 // Landmark nodes for Panel 4 (stacking)

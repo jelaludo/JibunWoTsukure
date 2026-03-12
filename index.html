@@ -7,36 +7,57 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="app">
+  <div class="app" role="application" aria-label="Body self-organization visualization">
     <header>
       <h1>自分を作れ<span>Build Yourself</span></h1>
       <p>Self-organization as the primary variable — four lenses, one body</p>
     </header>
 
-    <div class="panels">
-      <div class="panel">
+    <div class="panels" role="region" aria-label="Visualization panels">
+      <div class="panel" role="img" aria-label="Tension Economy — heat overlay showing parasitic tension per body region">
         <canvas id="canvas-tension"></canvas>
+        <div class="panel-sr" aria-live="polite" id="sr-tension"></div>
       </div>
-      <div class="panel">
+      <div class="panel" role="img" aria-label="Internal Connections — kinetic chains linking distant body parts through the core">
         <canvas id="canvas-connections"></canvas>
+        <div class="panel-sr" aria-live="polite" id="sr-connections"></div>
       </div>
-      <div class="panel">
+      <div class="panel" role="img" aria-label="Force Flow — how external force transmits through the body to the ground">
         <canvas id="canvas-force"></canvas>
+        <div class="panel-sr" aria-live="polite" id="sr-force"></div>
       </div>
-      <div class="panel">
+      <div class="panel" role="img" aria-label="Stacking Alignment — vertical alignment of body landmarks relative to ankles">
         <canvas id="canvas-stacking"></canvas>
+        <div class="panel-sr" aria-live="polite" id="sr-stacking"></div>
       </div>
     </div>
 
-    <div class="controls">
-      <div class="steps" id="steps"></div>
+    <div class="controls" role="region" aria-label="Playback controls">
+      <div class="controls-top-row">
+        <div class="scenario-selector" role="group" aria-label="Scenario selection">
+          <label for="scenario-select">Scenario:</label>
+          <select id="scenario-select" aria-label="Choose scenario">
+            <option value="standing">Standing 立位</option>
+            <option value="armInTriangle">Arm-in-Triangle 腕三角</option>
+          </select>
+        </div>
+        <button id="autoplay-btn" class="autoplay-btn" aria-label="Play auto-advance" title="Auto-play through all stages">
+          <span class="play-icon" aria-hidden="true">▶</span>
+        </button>
+      </div>
+      <div class="steps" id="steps" role="group" aria-label="Stage steps"></div>
       <div class="slider-row">
-        <label>Unbuilt</label>
-        <input type="range" id="slider" min="0" max="1" step="0.005" value="0">
+        <label for="slider" id="slider-label-left">Unbuilt</label>
+        <input type="range" id="slider" min="0" max="1" step="0.005" value="0"
+               aria-label="Organization progress"
+               aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"
+               aria-describedby="slider-label">
         <label>Built</label>
       </div>
-      <div class="slider-label" id="slider-label"></div>
+      <div class="slider-label" id="slider-label" aria-live="polite"></div>
     </div>
+
+    <div class="tooltip" id="tooltip" role="tooltip" aria-hidden="true"></div>
   </div>
 
   <script type="module" src="src/main.js"></script>

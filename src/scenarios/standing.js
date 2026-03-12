@@ -41,7 +41,7 @@ const keyframes = [
     forceEfficiency: 0.1,
     forceAccumulation: {
       shoulderR: 0.9, neck: 0.8, spine: 0.4, core: 0.1,
-      hipMid: 0.0, kneeR: 0.0, ankleR: 0.0,
+      hipR: 0.0, kneeR: 0.0, ankleR: 0.0,
     },
   },
 
@@ -83,7 +83,7 @@ const keyframes = [
     forceEfficiency: 0.35,
     forceAccumulation: {
       shoulderR: 0.7, neck: 0.5, spine: 0.5, core: 0.3,
-      hipMid: 0.1, kneeR: 0.0, ankleR: 0.0,
+      hipR: 0.1, kneeR: 0.0, ankleR: 0.0,
     },
   },
 
@@ -125,7 +125,7 @@ const keyframes = [
     forceEfficiency: 0.7,
     forceAccumulation: {
       shoulderR: 0.4, neck: 0.35, spine: 0.5, core: 0.6,
-      hipMid: 0.4, kneeR: 0.2, ankleR: 0.1,
+      hipR: 0.4, kneeR: 0.2, ankleR: 0.1,
     },
   },
 
@@ -167,7 +167,7 @@ const keyframes = [
     forceEfficiency: 0.95,
     forceAccumulation: {
       shoulderR: 0.15, neck: 0.15, spine: 0.3, core: 0.5,
-      hipMid: 0.6, kneeR: 0.7, ankleR: 0.9,
+      hipR: 0.6, kneeR: 0.7, ankleR: 0.9,
     },
   },
 ];

@@ -87,6 +87,17 @@ header p {
   height: 100%;
 }
 
+/* Screen reader only text for panels */
+.panel-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* --- Controls --- */
 
 .controls {
@@ -95,6 +106,72 @@ header p {
   align-items: center;
   gap: 8px;
   padding: 6px 0 4px;
+}
+
+.controls-top-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.scenario-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scenario-selector label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.scenario-selector select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.scenario-selector select:hover,
+.scenario-selector select:focus {
+  border-color: var(--accent);
+}
+
+.autoplay-btn {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.7rem;
+}
+
+.autoplay-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.autoplay-btn.playing {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(116, 185, 255, 0.1);
+}
+
+.autoplay-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .slider-row {
@@ -125,6 +202,11 @@ input[type="range"] {
   border-radius: 3px;
   outline: none;
   cursor: pointer;
+}
+
+input[type="range"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -175,10 +257,37 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text);
 }
 
+.step-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .step-btn.active {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(116, 185, 255, 0.1);
+}
+
+/* --- Tooltip --- */
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: rgba(22, 33, 62, 0.95);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 4px;
+  max-width: 240px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1.4;
+}
+
+.tooltip.visible {
+  opacity: 1;
 }
 
 /* --- Responsive: stack on narrow screens --- */
@@ -190,6 +299,11 @@ input[type="range"]::-moz-range-thumb {
   }
 
   .steps {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .controls-top-row {
     flex-wrap: wrap;
     justify-content: center;
   }
